@@ -18,6 +18,19 @@ desktop shells, dev servers and anything else with a loopback HTTP API.
 `localhost-guard` is the set of header checks that stops it, small enough to
 paste into an existing `BaseHTTPRequestHandler`.
 
+## Install
+
+Not on PyPI yet — `pip install localhost-guard` will 404 until 0.1.0 is
+published. Install from the repository instead:
+
+```bash
+pip install git+https://github.com/suimajian/localhost-guard
+```
+
+The sdist and wheel are attached to the
+[releases](https://github.com/suimajian/localhost-guard/releases); the publish
+step is waiting for credentials, so nothing has been uploaded to the index.
+
 ## Use
 
 ```python
