@@ -89,6 +89,26 @@ class Handler(LoopbackOnly, BaseHTTPRequestHandler):
   headers it likes. This is a browser-threat model, not an OS one.
 - It does not replace authentication if the service is ever bound to a
   non-loopback interface.
+- **A write with no `Host` header is rejected, not trusted.** An empty or missing
+  `Host` is not loopback: it means something other than a browser reached you, so
+  the request gets 403. Reads without a `Host` are allowed, which keeps `curl
+  http://127.0.0.1:PORT/` working.
+
+## Scope and non-goals
+
+- **Not a framework integration.** Flask/Django/FastAPI adapters are out of scope;
+  the package is one zero-dependency module you copy or import.
+- **Not CSRF tokens.** There is no session, no token store, no cookie — the checks
+  are header-based (Host, `Sec-Fetch-Site`, Origin, and a JSON content type on
+  writes). If you need per-session tokens, add them; this is the cheap floor.
+- **Not protection against local processes.** Anything running as another user on
+  the same box can forge headers. That is the browser threat model's edge.
+
+## Status
+
+0.1.0 — not on PyPI yet. A tag (`v*`) builds sdist + wheel and uploads them as a
+workflow artifact; the publish step only runs when a `PYPI_API_TOKEN` repository
+secret exists, so nothing is published by accident.
 
 ## Tests
 
