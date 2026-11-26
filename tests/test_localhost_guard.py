@@ -162,3 +162,61 @@ def test_read_without_host_header_is_allowed():
 def test_empty_host_string_is_not_loopback():
     d = check("POST", {"host": "", "content-type": "application/json"})
     assert not d and d.status == 403
+
+
+def test_write_flag_applies_write_rules_to_get():
+    """README promises guard(write=True) makes a GET obey the write rules."""
+    denied = check("GET", {}, write=True)
+    assert not denied.allowed and denied.status == 403
+    assert check("GET", {}).allowed          # a plain read stays allowed
+
+
+def test_write_flag_requires_json_on_get():
+    decision = check("GET", {"Host": "127.0.0.1:8080",
+                             "Content-Type": "application/x-www-form-urlencoded"}, write=True)
+    assert not decision.allowed and decision.status == 415
+
+
+def _guarded_get(headers, write):
+    class Request(LoopbackOnly):
+        command = "GET"
+
+        def __init__(self):
+            self.headers = headers
+            self.sent = None
+
+        def send_response(self, code, message=None):
+            self.sent = code
+
+        def send_header(self, *args):
+            pass
+
+        def end_headers(self):
+            pass
+
+        @property
+        def wfile(self):
+            import io
+            return io.BytesIO()
+
+    request = Request()
+    return request.guard(write=write), request.sent
+
+
+def test_guard_write_flag_reaches_the_handler():
+    allowed, status = _guarded_get({}, write=True)
+    assert (allowed, status) == (False, 403)
+    allowed, status = _guarded_get({}, write=False)
+    assert (allowed, status) == (True, None)
+
+
+def test_version_matches_pyproject():
+    import pathlib
+    import re
+
+    import localhost_guard
+
+    repo = pathlib.Path(__file__).resolve().parents[1]
+    declared = re.search(r'^version = "([^"]+)"', (repo / "pyproject.toml").read_text(encoding="utf-8"), re.M)
+    assert declared, "version missing from pyproject.toml"
+    assert declared.group(1) == localhost_guard.__version__

@@ -25,6 +25,8 @@ browsers omit ``Sec-Fetch-*``, and ``Origin`` is missing from same-origin GETs.
 
 from __future__ import annotations
 
+__version__ = "0.1.2"
+
 from typing import Iterable, Mapping, Optional
 
 __all__ = ["Decision", "check", "LoopbackOnly"]
@@ -67,19 +69,24 @@ def check(method: str,
           headers: Mapping[str, str],
           *,
           trusted_origins: Iterable[str] = (),
-          require_json: bool = True) -> Decision:
+          require_json: bool = True,
+          write: Optional[bool] = None) -> Decision:
     """Decide whether a request may touch the service.
 
     ``headers`` is case-insensitive in practice; pass the request headers as a
     plain mapping and the lookup below lower-cases both sides.
+
+    ``write`` overrides the method-based guess: pass ``True`` from a GET handler
+    that mutates state, so the write rules (Host and Content-Type) apply to it.
     """
+    is_write = method.upper() in WRITE_METHODS if write is None else write
     lowered = {k.lower(): v for k, v in headers.items()}
     host = _host_port(lowered.get("host", ""))
     if not host:
         # No Host at all: HTTP/1.0, or something in the middle stripped it. A
         # browser always sends one, so a write without it is not a browser we
         # want to serve; a read is harmless and keeps old clients working.
-        if method.upper() in WRITE_METHODS:
+        if is_write:
             return Decision(False, 403, "write without a Host header")
         return _ALLOW
     if host not in LOOPBACK_HOSTS:
@@ -100,7 +107,7 @@ def check(method: str,
             if origin_host not in LOOPBACK_HOSTS:
                 return Decision(False, 403, f"untrusted origin: {origin!r}")
 
-    if require_json and method.upper() in WRITE_METHODS:
+    if require_json and is_write:
         ctype = lowered.get("content-type", "").split(";", 1)[0].strip().lower()
         if ctype != JSON_CONTENT_TYPE:
             return Decision(False, 415, f"write requires application/json, got {ctype!r}")
@@ -131,7 +138,7 @@ class LoopbackOnly:
         if write is None:
             write = method.upper() in WRITE_METHODS
         decision = check(method, self.headers, trusted_origins=self.trusted_origins,
-                         require_json=write and self.require_json)
+                         require_json=self.require_json, write=write)
         if decision.allowed:
             return True
         self.send_response(decision.status)

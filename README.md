@@ -83,7 +83,9 @@ class Handler(LoopbackOnly, BaseHTTPRequestHandler):
   approval. Never put a state change behind GET (`/delete?id=`, `/sync`,
   `/switch-profile`) — that endpoint is unprotected no matter what this library
   does. Either keep every mutation on POST/PUT/PATCH/DELETE, or call
-  `guard(write=True)` in that handler so the write rules apply to it anyway.
+  `guard(write=True)` in that handler so the write rules apply to it anyway
+  (that flag now reaches `check()`; the Host and Content-Type rules then apply
+  even though the method is `GET`).
 - **It is a function, not middleware.** Every handler has to call it; one handler
   that forgets is one unguarded endpoint, silently. If you want it enforced
   structurally, wrap your framework's dispatcher so a response cannot be produced
@@ -112,8 +114,9 @@ class Handler(LoopbackOnly, BaseHTTPRequestHandler):
 
 ## Status
 
-0.1.1 — on PyPI (`pip install localhost-guard`); 0.1.0 is yanked because its project page
-still carried the pre-release README. Trusted Publishing (OIDC) does the upload,
+0.1.2 — on PyPI (`pip install localhost-guard`); 0.1.1 is yanked and 0.1.0 is
+yanked as well. 0.1.1 silently ignored `guard(write=True)` on `GET`; 0.1.0
+additionally carried the pre-release README. Trusted Publishing (OIDC) does the upload,
 so no token lives in this repository. Tags (`v*`) build sdist + wheel and attach
 them to the GitHub release.
 

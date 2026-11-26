@@ -4,16 +4,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "localhost-guard"
-version = "0.1.1"
+version = "0.1.2"
 description = "Header checks that stop a random web page from driving your loopback HTTP service"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "suimajian" }]
 keywords = ["localhost", "csrf", "dns-rebinding", "security", "http"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
 
 [project.urls]
 Homepage = "https://github.com/suimajian/localhost-guard"
+Source = "https://github.com/suimajian/localhost-guard"
+Issues = "https://github.com/suimajian/localhost-guard/issues"
 
 [tool.setuptools]
 py-modules = ["localhost_guard"]
