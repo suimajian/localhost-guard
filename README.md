@@ -50,7 +50,7 @@ if not decision.allowed:
 
 | Header | Refuse when | Stops |
 | --- | --- | --- |
-| `Host` | not `127.0.0.1`, `localhost`, `[::1]`, empty | DNS rebinding |
+| `Host` | not `127.0.0.1`, `localhost`, `[::1]`, or empty/missing on a write | DNS rebinding |
 | `Sec-Fetch-Site` | `cross-site` (when present) | another page's request |
 | `Origin` | not loopback, or `null` | cross-origin `fetch`/form posts |
 | `Content-Type` | write without `application/json` | cross-origin form posts |
