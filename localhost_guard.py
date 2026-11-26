@@ -29,7 +29,7 @@ from typing import Iterable, Mapping, Optional
 
 __all__ = ["Decision", "check", "LoopbackOnly"]
 
-LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "[::1]", "::1", ""})
+LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "[::1]", "::1"})
 SAFE_SITES = frozenset({"same-origin", "same-site", "none"})
 WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 JSON_CONTENT_TYPE = "application/json"
@@ -75,6 +75,13 @@ def check(method: str,
     """
     lowered = {k.lower(): v for k, v in headers.items()}
     host = _host_port(lowered.get("host", ""))
+    if not host:
+        # No Host at all: HTTP/1.0, or something in the middle stripped it. A
+        # browser always sends one, so a write without it is not a browser we
+        # want to serve; a read is harmless and keeps old clients working.
+        if method.upper() in WRITE_METHODS:
+            return Decision(False, 403, "write without a Host header")
+        return _ALLOW
     if host not in LOOPBACK_HOSTS:
         return Decision(False, 403, f"host not loopback: {lowered.get('host')!r}")
 

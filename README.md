@@ -72,6 +72,19 @@ class Handler(LoopbackOnly, BaseHTTPRequestHandler):
 
 ## What this does not cover
 
+- **GET is always allowed.** A cross-site page can still trigger a GET to
+  `http://127.0.0.1:PORT/...`, because reads need no preflight and no CORS
+  approval. Never put a state change behind GET (`/delete?id=`, `/sync`,
+  `/switch-profile`) — that endpoint is unprotected no matter what this library
+  does. Either keep every mutation on POST/PUT/PATCH/DELETE, or call
+  `guard(write=True)` in that handler so the write rules apply to it anyway.
+- **It is a function, not middleware.** Every handler has to call it; one handler
+  that forgets is one unguarded endpoint, silently. If you want it enforced
+  structurally, wrap your framework's dispatcher so a response cannot be produced
+  without a `Decision`.
+- **`require_json=True` rejects file uploads.** `multipart/form-data` and
+  `fetch(..., body: new FormData())` get 415 by design; pass `require_json=False`
+  on upload routes and lean on `Sec-Fetch-Site` there.
 - A local process running as another user on the same machine can send whatever
   headers it likes. This is a browser-threat model, not an OS one.
 - It does not replace authentication if the service is ever bound to a
@@ -83,7 +96,7 @@ class Handler(LoopbackOnly, BaseHTTPRequestHandler):
 python -m pytest -q
 ```
 
-Sixteen cases: the unit checks, plus a real `ThreadingHTTPServer` on an ephemeral
+Nineteen cases: the unit checks, plus a real `ThreadingHTTPServer` on an ephemeral
 port to prove the mixin writes 403 for a cross-site POST and 415 for a form post.
 
 ## Licence

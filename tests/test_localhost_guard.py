@@ -148,3 +148,17 @@ def test_server_refuses_form_post(server):
 def test_server_allows_plain_get(server):
     status, body, _ = _request(server, "GET")
     assert status == 200 and body == b"ok"
+
+def test_write_without_host_header_is_refused():
+    d = check("POST", {"content-type": "application/json"}, )
+    assert not d and d.status == 403
+    assert "Host" in d.reason
+
+
+def test_read_without_host_header_is_allowed():
+    assert check("GET", {})
+
+
+def test_empty_host_string_is_not_loopback():
+    d = check("POST", {"host": "", "content-type": "application/json"})
+    assert not d and d.status == 403
