@@ -220,3 +220,52 @@ def test_version_matches_pyproject():
     declared = re.search(r'^version = "([^"]+)"', (repo / "pyproject.toml").read_text(encoding="utf-8"), re.M)
     assert declared, "version missing from pyproject.toml"
     assert declared.group(1) == localhost_guard.__version__
+
+
+def test_navigation_get_needs_require_json_off():
+    """A link carries no Content-Type: write=True alone would 415 it."""
+    headers = {"Host": "127.0.0.1:8080"}
+    assert check("GET", headers, write=True).status == 415
+    assert check("GET", headers, write=True, require_json=False).allowed
+
+
+def test_guard_write_flag_with_require_json_off():
+    class Request(LoopbackOnly):
+        command = "GET"
+        require_json = False
+
+        def __init__(self):
+            self.headers = {"Host": "127.0.0.1:8080"}
+            self.sent = None
+
+        def send_response(self, code, message=None):
+            self.sent = code
+
+        def send_header(self, *args):
+            pass
+
+        def end_headers(self):
+            pass
+
+        @property
+        def wfile(self):
+            import io
+            return io.BytesIO()
+
+    assert Request().guard(write=True) is True
+
+
+def test_readme_status_names_the_current_version():
+    """The Status paragraph is hand-edited; keep it honest."""
+    import pathlib
+    import re
+
+    import localhost_guard as mod
+
+    repo = pathlib.Path(__file__).resolve().parents[1]
+    readme = (repo / "README.md").read_text(encoding="utf-8")
+    status = re.search(r"^## Status\n\n(.+?)(?:\n\n|\Z)", readme, re.S | re.M)
+    assert status, "README has no Status paragraph"
+    assert mod.__version__ in status.group(1), (
+        f"README Status does not mention {mod.__version__}: {status.group(1)[:80]!r}"
+    )

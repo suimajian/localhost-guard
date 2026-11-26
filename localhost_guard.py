@@ -25,7 +25,7 @@ browsers omit ``Sec-Fetch-*``, and ``Origin`` is missing from same-origin GETs.
 
 from __future__ import annotations
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 from typing import Iterable, Mapping, Optional
 

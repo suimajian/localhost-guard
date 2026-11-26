@@ -84,8 +84,21 @@ class Handler(LoopbackOnly, BaseHTTPRequestHandler):
   `/switch-profile`) — that endpoint is unprotected no matter what this library
   does. Either keep every mutation on POST/PUT/PATCH/DELETE, or call
   `guard(write=True)` in that handler so the write rules apply to it anyway
-  (that flag now reaches `check()`; the Host and Content-Type rules then apply
-  even though the method is `GET`).
+  (that flag reaches `check()`; the Host and Content-Type rules then apply even
+  though the method is `GET`). Note the Content-Type half: a navigation-style
+  `GET` (`<a href="/delete?id=1">`) carries no `Content-Type`, so with the
+  default `require_json=True` it is rejected with **415** — safe, but it kills
+  the link. Pair the flag with `require_json = False` on the handler unless the
+  caller is scripted enough to send JSON:
+
+  ```python
+  class Handler(LoopbackOnly, BaseHTTPRequestHandler):
+      require_json = False          # GET links carry no Content-Type
+      def do_GET(self):
+          if not self.guard(write=True):
+              return
+          ...                       # Host + Sec-Fetch-Site still enforced
+  ```
 - **It is a function, not middleware.** Every handler has to call it; one handler
   that forgets is one unguarded endpoint, silently. If you want it enforced
   structurally, wrap your framework's dispatcher so a response cannot be produced
@@ -114,9 +127,11 @@ class Handler(LoopbackOnly, BaseHTTPRequestHandler):
 
 ## Status
 
-0.1.2 — on PyPI (`pip install localhost-guard`); 0.1.1 is yanked and 0.1.0 is
-yanked as well. 0.1.1 silently ignored `guard(write=True)` on `GET`; 0.1.0
-additionally carried the pre-release README. Trusted Publishing (OIDC) does the upload,
+0.1.3 — on PyPI (`pip install localhost-guard`); 0.1.1 and 0.1.0 are yanked.
+0.1.1 silently ignored `guard(write=True)` on `GET`; 0.1.0 additionally carried
+the pre-release README. 0.1.3 only documents that `write=True` plus the default
+`require_json=True` rejects navigation-style GETs with 415, so the two flags go
+together. Trusted Publishing (OIDC) does the upload,
 so no token lives in this repository. Tags (`v*`) build sdist + wheel and attach
 them to the GitHub release.
 
